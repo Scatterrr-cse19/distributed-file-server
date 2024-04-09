@@ -1,5 +1,7 @@
 HELP.md
 target/
+resources/chunks/
+**/data.txt
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
