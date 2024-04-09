@@ -1,5 +1,9 @@
 package com.scatterrr.distributedfileserver.service;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -10,6 +14,8 @@ import java.util.ArrayList;
 import static com.scatterrr.distributedfileserver.config.Config.CHUNK_SIZE;
 import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 
+@Service
+@NoArgsConstructor
 public class FileManager {
 
     public ArrayList<String> chunkFile(String fileName) throws Exception {

@@ -5,6 +5,10 @@ import com.scatterrr.distributedfileserver.service.MerkleTree;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +21,8 @@ import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+@SpringBootTest
+@RunWith(SpringRunner.class)
 public class ValidationTest {
 
     private static final ArrayList<String> chunks = new ArrayList<>(){{
@@ -36,8 +42,11 @@ public class ValidationTest {
     private String originalRoot;
     private static final String fileName = "data";
 
-    private static final FileManager fileManager = new FileManager();
-    private static final MerkleTree merkleTree = new MerkleTree();
+    @Autowired
+    private FileManager fileManager;
+
+    @Autowired
+    private MerkleTree merkleTree;
 
     @Before
     public void setUp() throws Exception{

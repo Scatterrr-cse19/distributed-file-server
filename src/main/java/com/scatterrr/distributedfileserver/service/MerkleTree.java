@@ -1,5 +1,8 @@
 package com.scatterrr.distributedfileserver.service;
 
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -11,6 +14,8 @@ import java.util.stream.Collectors;
 
 import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 
+@Service
+@NoArgsConstructor
 public class MerkleTree {
 
     public String createMerkleTree(ArrayList<String> chunkLists) {
