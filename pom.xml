@@ -78,4 +78,44 @@
 		</plugins>
 	</build>
 
+	<profiles>
+		<profile>
+			<id>docker-run</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.fabric8</groupId>
+						<artifactId>docker-maven-plugin</artifactId>
+						<version>0.44.0</version>
+						<configuration>
+							<images>
+								<image>
+									<name>distributed-file-server</name>
+									<run>
+										<ports>
+											<port>8080:8080</port>
+										</ports>
+									</run>
+									<build>
+										<dockerFileDir>${project.basedir}</dockerFileDir>
+									</build>
+								</image>
+							</images>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>stop</goal>
+									<goal>build</goal>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>
