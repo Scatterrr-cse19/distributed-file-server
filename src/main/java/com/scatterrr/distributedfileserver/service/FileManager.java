@@ -15,49 +15,28 @@ import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 @NoArgsConstructor
 public class FileManager {
 
-    public ArrayList<String> chunkFile(MultipartFile inputFile) throws Exception {
-        String fileName = inputFile.getOriginalFilename();
-
+    public ArrayList<byte[]> chunkFile(MultipartFile inputFile) throws Exception {
         byte[] buffer = new byte[CHUNK_SIZE];
         int bytesRead;
-        int count = 0;
 
-        ArrayList<String> chunkFileNames = new ArrayList<>();
+        ArrayList<byte[]> fileChunks = new ArrayList<>();
 
-        File directory = new File(ROOT + "chunks/" + StringUtils.stripFilenameExtension(fileName));
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-        try (InputStream inputStream = inputFile.getInputStream()) {
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                String chunkFileName = StringUtils.stripFilenameExtension(fileName) + "-" + (++count) + ".txt";
-                try (FileOutputStream outputStream = new FileOutputStream(directory.getPath() + "/" + chunkFileName)) {
-                    chunkFileNames.add(chunkFileName);
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-            }
-        }
-        return chunkFileNames;
-    }
-
-    public void mergeChunks(ArrayList<String> chunkFileNames) throws Exception {
-        String filename = chunkFileNames.get(0).replaceAll("-\\d+\\.txt", "");
-        String outputFilePath = ROOT + "output/" + filename + ".txt";
-        FileOutputStream outputStream = new FileOutputStream(outputFilePath);
-        for (String chunkFileName : chunkFileNames) {
-            FileInputStream inputStream = new FileInputStream(ROOT + filename + "/chunks/"
-                    + chunkFileName);
-            byte[] buffer = new byte[CHUNK_SIZE];
-            int bytesRead;
-
+        InputStream inputStream = inputFile.getInputStream();
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
+                fileChunks.add(outputStream.toByteArray());
+                outputStream.reset();
             }
-
-            inputStream.close();
         }
+        return fileChunks;
+    }
 
-        outputStream.close();
+    public byte[] mergeChunks(ArrayList<byte[]> fileChunks) throws IOException {
+        ByteArrayOutputStream mergedOutput = new ByteArrayOutputStream();
+        for (byte[] chunk : fileChunks) {
+            mergedOutput.write(chunk);
+        }
+        return mergedOutput.toByteArray();
     }
 }

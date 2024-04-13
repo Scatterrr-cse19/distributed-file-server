@@ -18,28 +18,11 @@ import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 @NoArgsConstructor
 public class MerkleTree {
 
-    public String createMerkleTree(ArrayList<String> chunkLists) {
-        String filename = chunkLists.get(0).replaceAll("-\\d+\\.txt", "");;
-        ArrayList<String> txnLists = new ArrayList<>(chunkLists.stream()
-                .map(chunkPath -> {
-                            try {
-                                return Files.readString(Paths.get(ROOT + "chunks/" +
-                                        filename + "/" + chunkPath));
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                                return null;
-                            }
-                        }
-                )
-                .collect(Collectors.toList()));
+    public String createMerkleTree(ArrayList<byte[]> chunkLists) {
+    ArrayList<String> txnLists = new ArrayList<>(chunkLists.stream()
+                    .map(chunk -> new String(chunk))
+                    .collect(Collectors.toList()));
         return merkleTree(txnLists).get(0);
-    }
-
-    public boolean isValid(ArrayList<String> original_list,
-                           ArrayList<String> tampered_list) {
-        String original_merkleRoot = createMerkleTree(original_list);
-        String tampered_merkleRoot = createMerkleTree(tampered_list);
-        return original_merkleRoot.equals(tampered_merkleRoot);
     }
 
     private ArrayList<String> merkleTree(ArrayList<String> hashList) {

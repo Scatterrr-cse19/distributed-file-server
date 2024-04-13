@@ -17,12 +17,12 @@ public class MetadataService {
     private final MerkleTree merkleTree;
 
     public void saveMetadata(MultipartFile file) throws Exception{
-        ArrayList<String> chunkFileNames = fileManager.chunkFile(file);
-        String merkleRootHash = merkleTree.createMerkleTree(chunkFileNames);
-        String firstChunkUrl = distributeChunks(chunkFileNames);
+        ArrayList<byte[]> chunks = fileManager.chunkFile(file);
+        String merkleRootHash = merkleTree.createMerkleTree(chunks);
+        String firstChunkUrl = distributeChunks(chunks);
         Metadata metadata = Metadata.builder()
                 .fileName(file.getOriginalFilename())
-                .numberOfChunks(chunkFileNames.size())
+                .numberOfChunks(chunks.size())
                 .locationOfFirstChunk(firstChunkUrl)
                 .merkleRootHash(merkleRootHash)
                 .build();
@@ -30,7 +30,7 @@ public class MetadataService {
     }
 
     // TODO: Implement distribute chunks method
-    private String distributeChunks(ArrayList<String> chunkFileNames) {
+    private String distributeChunks(ArrayList<byte[]> chunkFileNames) {
         return "<First Chunk URL>";
     }
 }
