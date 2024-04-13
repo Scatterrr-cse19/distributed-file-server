@@ -5,10 +5,12 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 import static com.scatterrr.distributedfileserver.config.Config.CHUNK_SIZE;
@@ -18,9 +20,8 @@ import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 @NoArgsConstructor
 public class FileManager {
 
-    public ArrayList<String> chunkFile(String fileName) throws Exception {
-        File inputFile = new File(ROOT + fileName);
-        FileInputStream inputStream = new FileInputStream(inputFile);
+    public ArrayList<String> chunkFile(MultipartFile inputFile) throws Exception {
+        String fileName = inputFile.getOriginalFilename();
 
         byte[] buffer = new byte[CHUNK_SIZE];
         int bytesRead;
@@ -33,15 +34,15 @@ public class FileManager {
             directory.mkdirs();
         }
 
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-            String chunkfileName = StringUtils.stripFilenameExtension(fileName) + "-"+ (++count) + ".txt";
-            FileOutputStream outputStream = new FileOutputStream(directory.getPath() + "/" + chunkfileName);
-            chunkFileNames.add(chunkfileName);
-            outputStream.write(buffer, 0, bytesRead);
-            outputStream.close();
+        try (InputStream inputStream = inputFile.getInputStream()) {
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                String chunkFileName = StringUtils.stripFilenameExtension(fileName) + "-" + (++count) + ".txt";
+                try (FileOutputStream outputStream = new FileOutputStream(directory.getPath() + "/" + chunkFileName)) {
+                    chunkFileNames.add(chunkFileName);
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
         }
-
-        inputStream.close();
         return chunkFileNames;
     }
 
