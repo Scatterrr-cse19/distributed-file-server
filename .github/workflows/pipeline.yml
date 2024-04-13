@@ -27,7 +27,8 @@ jobs:
         run: |
           START_MARKER="<!-- TODOs -->"
           END_MARKER="<!-- /TODOs -->"
-          sed -i "/${START_MARKER}/,/${END_MARKER}/ { /${END_MARKER}/! { $!N; s/${END_MARKER}.*/${END_MARKER}/; }; s/${END_MARKER}/$(cat todos.txt)\n${END_MARKER}/ }" README.md
+          TODOS_CONTENT=$(cat todos.txt)
+          sed -i "/${START_MARKER}/a ${TODOS_CONTENT//$'\n'/\\n}" README.md
 
       - name: Commit changes
         run: |
