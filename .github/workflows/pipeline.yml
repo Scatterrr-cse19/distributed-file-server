@@ -21,7 +21,7 @@ jobs:
 
       - name: Search for TODOs
         run: |
-          rg TODO > todos.txt
+          rg TODO | tee todos.txt
 
       - name: Append TODOs to README
         run: |
