@@ -4,6 +4,3 @@
 ```bash
 ./mvnw spring-boot:run
 ```
-
-<!-- TODOs -->
-<!-- /TODOs -->
