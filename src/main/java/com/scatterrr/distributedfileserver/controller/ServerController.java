@@ -1,8 +1,8 @@
 package com.scatterrr.distributedfileserver.controller;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
-import com.scatterrr.distributedfileserver.model.Node;
-import com.scatterrr.distributedfileserver.service.FileManager;
+import com.scatterrr.distributedfileserver.dto.Node;
+import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class ServerController {
 
     private final PeerAwareInstanceRegistry registry;
-    private final FileManager fileManager;
+    private final MetadataService metadataService;
 
     @GetMapping(value = "/instances", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
@@ -36,8 +36,8 @@ public class ServerController {
 
     @PostMapping(value = "/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception{
-        ArrayList<String> chunkFileNames = fileManager.chunkFile(file);
-        return chunkFileNames.toString();
+        metadataService.saveMetadata(file);
+        return "File uploaded successfully";
     }
 
 }

@@ -1,4 +1,4 @@
-package com.scatterrr.distributedfileserver.model;
+package com.scatterrr.distributedfileserver.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

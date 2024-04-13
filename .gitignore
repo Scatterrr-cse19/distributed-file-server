@@ -33,3 +33,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# SQLite Database
+/file-server.db
