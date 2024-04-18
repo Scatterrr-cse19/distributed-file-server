@@ -40,4 +40,18 @@ public class ServerController {
         return "File uploaded successfully";
     }
 
+    @GetMapping(value = "/retrieve") // returns the merged file as a byte array
+    public byte[] retrieveFile(@RequestParam("fileName") String fileName) {
+        // returns the merged file as a byte array
+        // returns null if the file is not authentic
+        return metadataService.retrieveFile(fileName);
+    }
+
+    // Not sure if this is needed
+    @GetMapping(value = "/metadata")
+    public String getMetadata(@RequestParam("fileName") String fileName) {
+        // returns the metadata of the file as a JSONString (to be viewed at file explorer)
+        return metadataService.getMetadata(fileName).toJSONString();
+    }
+
 }
