@@ -5,8 +5,14 @@ import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MetadataService {
 
     private final FileServerRepository fileServerRepository;
@@ -21,11 +28,12 @@ public class MetadataService {
     private final MerkleTree merkleTree;
     private final PeerAwareInstanceRegistry registry;
 
+    private final WebClient.Builder webClientBuilder;
+
     public void saveMetadata(MultipartFile file) throws Exception{
         ArrayList<byte[]> chunks = fileManager.chunkFile(file);
         String merkleRootHash = merkleTree.createMerkleTree(chunks);
-//        String firstChunkUrl = distributeChunks(chunks);
-        String firstChunkUrl = "<First Chunk URL>"; // Temporary
+        String firstChunkUrl = distributeChunks(chunks);
         Metadata metadata = Metadata.builder()
                 .fileName(file.getOriginalFilename())
                 .numberOfChunks(chunks.size())
@@ -57,8 +65,7 @@ public class MetadataService {
         }
     }
 
-    // TODO: Implement distribute chunks method
-    private String distributeChunks(ArrayList<byte[]> chunkFileNames) {
+    private String distributeChunks(ArrayList<byte[]> chunks){
         ArrayList<Node> nodes = registry.getApplications().getRegisteredApplications().stream().
                 map(application ->
                         application.getInstances().stream().map(instance ->
@@ -68,12 +75,36 @@ public class MetadataService {
                                 )
                         ).collect(Collectors.toCollection(ArrayList::new))
                 ).collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+
         // Randomize nodes list
         Collections.shuffle(nodes);
+
         // Distribute chunks to nodes
+        int i = 0;
+        int j = 0;
+        MultiValueMap<String, Object> body;
+        while (i < chunks.size()) {
+            body = new LinkedMultiValueMap<>();
+            body.add("chunk", chunks.get(i));
+            body.add("chunkId", String.valueOf(i));
+            WebClient.ResponseSpec responseSpec = webClientBuilder.build().post()
+                    .uri(nodes.get(j).getHomeUrl() + "/api/node/upload")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve();
+            if (responseSpec.bodyToMono(String.class).block().equals("Chunk received successfully")) {
+                i += 1;
+                log.info("Chunk {} uploaded to {}", i, nodes.get(j).getName());
+            }
+            if (j == nodes.size() - 1) {
+                j = 0;
+            } else {
+                j += 1;
+            }
+        }
 
         // Return URL of first chunk
-        return "<First Chunk URL>";
+        return nodes.get(0).getHomeUrl();
     }
 
     // TODO: Implement get chunks method
