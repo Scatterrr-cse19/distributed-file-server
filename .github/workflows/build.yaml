@@ -33,4 +33,4 @@ jobs:
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           ./mvnw clean compile jib:dockerBuild
           docker tag distributed-file-server:0.0.1-SNAPSHOT ghcr.io/banulakumarage/spring-security:${{ github.sha }}
-          docker push ghcr.io/Scatterrr-cse19/distributed-file-server:latest
+          docker push ghcr.io/scatterrr-cse19/distributed-file-server:latest
