@@ -6,6 +6,7 @@ import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -33,7 +34,7 @@ public class MetadataService {
     public void saveMetadata(MultipartFile file) throws Exception{
         ArrayList<byte[]> chunks = fileManager.chunkFile(file);
         String merkleRootHash = merkleTree.createMerkleTree(chunks);
-        String firstChunkUrl = distributeChunks(chunks);
+        String firstChunkUrl = distributeChunks(chunks, file.getOriginalFilename(), merkleRootHash);
         Metadata metadata = Metadata.builder()
                 .fileName(file.getOriginalFilename())
                 .numberOfChunks(chunks.size())
@@ -65,7 +66,8 @@ public class MetadataService {
         }
     }
 
-    private String distributeChunks(ArrayList<byte[]> chunks){
+    private String distributeChunks(ArrayList<byte[]> chunks, String fileName, String merkleRootHash){
+        log.info("Distributing chunks of file {} with merkleHash {}", fileName, merkleRootHash);
         ArrayList<Node> nodes = registry.getApplications().getRegisteredApplications().stream().
                 map(application ->
                         application.getInstances().stream().map(instance ->
@@ -82,19 +84,40 @@ public class MetadataService {
         // Distribute chunks to nodes
         int i = 0;
         int j = 0;
+
+        // prevHash for the first node record is "0"
+        String prevHash = "0";
+
         MultiValueMap<String, Object> body;
         while (i < chunks.size()) {
+            String nextNode;
+            if (j == nodes.size() - 1) {
+                nextNode = nodes.get(0).getName();
+            } else {
+                nextNode = nodes.get(j).getName();
+            }
+
             body = new LinkedMultiValueMap<>();
             body.add("chunk", chunks.get(i));
             body.add("chunkId", String.valueOf(i));
+            body.add("fileName", fileName);
+            body.add("merkleRootHash", merkleRootHash);
+
+            body.add("nextNode", nextNode);
+            body.add("prevHash", prevHash);
+
+            log.info("Sending chunk {} to node {}", i, nodes.get(j).getName());
             WebClient.ResponseSpec responseSpec = webClientBuilder.build().post()
                     .uri(nodes.get(j).getHomeUrl() + "/api/node/upload")
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .body(BodyInserters.fromMultipartData(body))
                     .retrieve();
-            if (responseSpec.bodyToMono(String.class).block().equals("Chunk received successfully")) {
+
+            log.info("Received response {}", responseSpec.toString());
+            if (responseSpec.bodyToMono(UploadResponse.class).block().getStatusCode() == HttpStatus.OK.value()) {
+                prevHash = responseSpec.bodyToMono(UploadResponse.class).block().getMessage();
                 i += 1;
-                log.info("Chunk {} uploaded to {}", i, nodes.get(j).getName());
+                log.info("Chunk {} uploaded to {} with the hash {}", i, nodes.get(j).getName(), prevHash);
             }
             if (j == nodes.size() - 1) {
                 j = 0;
@@ -116,4 +139,24 @@ public class MetadataService {
         return chunks;
     }
 
+}
+
+// Class to hold upload response data
+class UploadResponse {
+    private final int statusCode;
+    private final String message;
+
+    public UploadResponse(int statusCode, String message) {
+        this.statusCode = statusCode;
+        this.message = message;
+    }
+
+    // Getters for statusCode and message
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }
