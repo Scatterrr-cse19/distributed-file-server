@@ -3,7 +3,6 @@ package com.scatterrr.distributedfileserver.service;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.dto.UploadResponse;
-import com.scatterrr.distributedfileserver.dto.RetrieveResponse;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -115,9 +115,11 @@ public class MetadataService {
                     .body(BodyInserters.fromMultipartData(body))
                     .retrieve();
 
-            log.info("Received upload response {}", responseSpec.toString());
-            if (responseSpec.bodyToMono(UploadResponse.class).block().getStatusCode() == HttpStatus.OK.value()) {
-                prevHash = responseSpec.bodyToMono(UploadResponse.class).block().getMessage();
+            UploadResponse uploadResponse = Objects.requireNonNull(
+                    responseSpec.bodyToMono(UploadResponse.class).block());
+            log.info("Received upload response {}", responseSpec);
+            if (uploadResponse.getStatusCode() == HttpStatus.OK.value()) {
+                prevHash = uploadResponse.getMessage();
                 i += 1;
                 log.info("Chunk {} uploaded to {} with the hash {}", i, nodes.get(j).getName(), prevHash);
             }
