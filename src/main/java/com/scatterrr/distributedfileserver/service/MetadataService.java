@@ -4,6 +4,8 @@ import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -159,51 +161,19 @@ public class MetadataService {
 }
 
 // Class to hold upload response data
+@Data
+@AllArgsConstructor
 class UploadResponse {
     private final int statusCode;
     private final String message;
-
-    public UploadResponse(int statusCode, String message) {
-        this.statusCode = statusCode;
-        this.message = message;
-    }
-
-    // Getters for statusCode and message
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getMessage() {
-        return message;
-    }
 }
 
+// Class to hold retrieve response data
+@Data
+@AllArgsConstructor
 class RetrieveResponse {
     private final int statusCode;
     private final String nextNode;
     private final String prevHash;
     private final byte[] chunk;
-
-    public RetrieveResponse(int statusCode, String nextNode, String prevHash, byte[] chunk) {
-        this.statusCode = statusCode;
-        this.nextNode = nextNode;
-        this.prevHash = prevHash;
-        this.chunk = chunk;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getNextNode() {
-        return nextNode;
-    }
-
-    public String getPrevHash() {
-        return prevHash;
-    }
-
-    public byte[] getChunk() {
-        return chunk;
-    }
 }
