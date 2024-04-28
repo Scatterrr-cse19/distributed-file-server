@@ -134,6 +134,23 @@ public class MetadataService {
     private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException {
         ArrayList<byte[]> chunks = new ArrayList<>();
         // Get chunks from nodes
+        String chunkId = "0";
+        String prevHash = "0";
+        String nodeUrl = firstChunkUrl;
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+
+        body.add("fileName", fileName);
+        body.add("chunkId", chunkId);
+
+        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post()
+                .uri(nodeUrl + "/api/node/retrieve")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(body))
+                .retrieve();
+
+        log.info("Received response {}", responseSpec.toString());
+
         // compare metadata of the node (w.r.t. previous node) and throw exception if metadata is tampered
         // throw new TamperedMetadataException("Metadata tampered on node"); if metadata of file on the node is tampered
         return chunks;
@@ -158,5 +175,35 @@ class UploadResponse {
 
     public String getMessage() {
         return message;
+    }
+}
+
+class RetrieveResponse {
+    private final int statusCode;
+    private final String nextNode;
+    private final String prevHash;
+    private final byte[] chunk;
+
+    public RetrieveResponse(int statusCode, String nextNode, String prevHash, byte[] chunk) {
+        this.statusCode = statusCode;
+        this.nextNode = nextNode;
+        this.prevHash = prevHash;
+        this.chunk = chunk;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public String getNextNode() {
+        return nextNode;
+    }
+
+    public String getPrevHash() {
+        return prevHash;
+    }
+
+    public byte[] getChunk() {
+        return chunk;
     }
 }
