@@ -2,10 +2,10 @@ package com.scatterrr.distributedfileserver.service;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.Node;
+import com.scatterrr.distributedfileserver.dto.UploadResponse;
+import com.scatterrr.distributedfileserver.dto.RetrieveResponse;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -115,7 +115,7 @@ public class MetadataService {
                     .body(BodyInserters.fromMultipartData(body))
                     .retrieve();
 
-            log.info("Received response {}", responseSpec.toString());
+            log.info("Received upload response {}", responseSpec.toString());
             if (responseSpec.bodyToMono(UploadResponse.class).block().getStatusCode() == HttpStatus.OK.value()) {
                 prevHash = responseSpec.bodyToMono(UploadResponse.class).block().getMessage();
                 i += 1;
@@ -158,22 +158,4 @@ public class MetadataService {
         return chunks;
     }
 
-}
-
-// Class to hold upload response data
-@Data
-@AllArgsConstructor
-class UploadResponse {
-    private final int statusCode;
-    private final String message;
-}
-
-// Class to hold retrieve response data
-@Data
-@AllArgsConstructor
-class RetrieveResponse {
-    private final int statusCode;
-    private final String nextNode;
-    private final String prevHash;
-    private final byte[] chunk;
 }
