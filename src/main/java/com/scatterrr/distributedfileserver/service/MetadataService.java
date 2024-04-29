@@ -8,6 +8,7 @@ import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
@@ -140,7 +143,7 @@ public class MetadataService {
     }
 
     // TODO: Implement get chunks method
-    private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException {
+    private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException, NoSuchAlgorithmException {
         log.info("Retrieving chunks of file {}", fileName);
         ArrayList<byte[]> chunks = new ArrayList<>();
         // Get chunks from nodes
@@ -148,7 +151,7 @@ public class MetadataService {
         String prevHash = "0";
         String nodeUrl = firstChunkUrl;
 
-        while (nodeUrl != null) {
+        while (!nodeUrl.equals("null")) {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("fileName", fileName);
             body.add("chunkId", chunkId);
@@ -170,7 +173,12 @@ public class MetadataService {
                 String retrievedPrevHash = retrieveResponse.getPrevHash();
                 // compare metadata of the node (w.r.t. previous node) and throw exception if metadata is tampered
                 // throw new TamperedMetadataException("Metadata tampered on node"); if metadata of file on the node is tampered
-                // TODO: Compare retrievedPrevHash with prevHash and throw exception if not equal
+                String metadataRecord = retrieveResponse.getMetadataRecord();
+                String metadataRecordHash = sha256(metadataRecord);
+                if (prevHash.equals(retrievedPrevHash))
+                    prevHash = metadataRecordHash;
+                else
+                    throw new TamperedMetadataException("Metadata tampered on node");
 
                 nodeUrl = retrieveResponse.getNextNode();
                 chunkId += 1;
@@ -180,4 +188,12 @@ public class MetadataService {
         return chunks;
     }
 
+    // Hash the metadata record
+    private String sha256(String original) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(original.getBytes());
+        byte[] digest = md.digest();
+        return Hex.encodeHexString(digest);
+    }
+    
 }
