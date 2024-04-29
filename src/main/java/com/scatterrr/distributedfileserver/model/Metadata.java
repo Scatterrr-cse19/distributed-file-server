@@ -19,8 +19,8 @@ public class Metadata {
     private String locationOfFirstChunk;
     private int numberOfChunks;
     private String merkleRootHash;
-
-    // TODO: Add more metadata fields
+    private long fileSize;
+    private String fileType;
 
 
     public String toJSONString() {

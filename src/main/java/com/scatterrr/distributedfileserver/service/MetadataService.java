@@ -1,10 +1,7 @@
 package com.scatterrr.distributedfileserver.service;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
-import com.scatterrr.distributedfileserver.dto.ChunksResponse;
-import com.scatterrr.distributedfileserver.dto.Node;
-import com.scatterrr.distributedfileserver.dto.RetrieveResponse;
-import com.scatterrr.distributedfileserver.dto.UploadResponse;
+import com.scatterrr.distributedfileserver.dto.*;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +44,8 @@ public class MetadataService {
                 .numberOfChunks(chunks.size())
                 .locationOfFirstChunk(firstChunkUrl)
                 .merkleRootHash(merkleRootHash)
+                .fileSize(file.getSize())
+                .fileType(file.getContentType())
                 .build();
         fileServerRepository.save(metadata);
     }
@@ -205,4 +204,15 @@ public class MetadataService {
         return Hex.encodeHexString(digest);
     }
 
+    public ArrayList<MetadataResponse> getFiles() {
+        return fileServerRepository.findAll().stream()
+                .map(metadata ->
+                        MetadataResponse.builder()
+                                .fileName(metadata.getFileName())
+                                .fileSize(metadata.getFileSize())
+                                .fileType(metadata.getFileType())
+                                .build()
+                )
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
 }

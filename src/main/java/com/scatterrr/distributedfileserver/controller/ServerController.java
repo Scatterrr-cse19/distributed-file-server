@@ -2,6 +2,7 @@ package com.scatterrr.distributedfileserver.controller;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.ChunksResponse;
+import com.scatterrr.distributedfileserver.dto.MetadataResponse;
 import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,11 @@ public class ServerController {
     public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
         metadataService.saveMetadata(file);
         return "File uploaded successfully";
+    }
+
+    @GetMapping(value = "/files")
+    public ArrayList<MetadataResponse> getFiles() {
+        return metadataService.getFiles();
     }
 
     @GetMapping(value = "/retrieve") // returns the merged file as a byte array
