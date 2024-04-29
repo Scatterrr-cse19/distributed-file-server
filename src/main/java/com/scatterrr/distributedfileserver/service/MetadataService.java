@@ -1,6 +1,7 @@
 package com.scatterrr.distributedfileserver.service;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
+import com.scatterrr.distributedfileserver.dto.ChunksResponse;
 import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.dto.RetrieveResponse;
 import com.scatterrr.distributedfileserver.dto.UploadResponse;
@@ -54,24 +55,28 @@ public class MetadataService {
         return fileServerRepository.findById(fileName).orElse(null);
     }
 
-    public byte[] retrieveFile(String fileName) {
+    public ChunksResponse retrieveFile(String fileName, boolean allowTampered) {
         Metadata metadata = getMetadata(fileName);
         try {
             ArrayList<byte[]> chunks = getChunks(metadata.getLocationOfFirstChunk(), fileName);
             String merkleRootHash = merkleTree.createMerkleTree(chunks);
             // check if merkleRootHash is equal to metadata.getMerkleRootHash(), hence the file is authentic
             boolean isAuthentic =  merkleRootHash.equals(metadata.getMerkleRootHash());
-            if (!isAuthentic){
-                log.info("File is tampered");
+            if (!isAuthentic && !allowTampered){
                 throw new TamperedMetadataException("Chunks are tampered");
             }
-            log.info("File is not tampered");
-            return fileManager.mergeChunks(chunks);
+            return ChunksResponse.builder()
+                    .chunks(fileManager.mergeChunks(chunks))
+                    .isAuthenticated(isAuthentic)
+                    .build();
         } catch (TamperedMetadataException e) {
             // Metadata in the nodes are tampered, hence the file is not authentic
             boolean isAuthentic = false;
             log.error("File is authentic: {}", isAuthentic);
-            return null;
+            return ChunksResponse.builder()
+                    .chunks(null)
+                    .isAuthenticated(isAuthentic)
+                    .build();
         } catch (Exception e) {
             // Error in merging chunks
             return null;

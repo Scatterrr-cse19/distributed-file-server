@@ -1,6 +1,7 @@
 package com.scatterrr.distributedfileserver.controller;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
+import com.scatterrr.distributedfileserver.dto.ChunksResponse;
 import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
@@ -36,18 +37,26 @@ public class ServerController {
     }
 
     @PostMapping(value = "/upload")
-    public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception{
+    public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
         metadataService.saveMetadata(file);
         return "File uploaded successfully";
     }
 
     @GetMapping(value = "/retrieve") // returns the merged file as a byte array
-    public ResponseEntity<byte []> retrieveFile(@RequestParam("fileName") String fileName) {
+    public ResponseEntity<byte[]> retrieveFile(@RequestParam("fileName") String fileName
+            , @RequestParam(
+            value = "allowTampered", required = false, defaultValue = "false") Boolean allowTampered) {
+
         // returns the merged file as a byte array
         // returns null if the file is not authentic
-        byte[] fileData = metadataService.retrieveFile(fileName);
-        if (fileData == null) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        ChunksResponse chunksResponse = metadataService.retrieveFile(fileName, allowTampered);
+        byte[] fileData = chunksResponse.getChunks();
+        boolean isAuthenticated = chunksResponse.isAuthenticated();
+        if (!isAuthenticated) {
+            if (fileData == null)
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            else
+                return new ResponseEntity<>(fileData, HttpStatus.OK);
         } else
             return new ResponseEntity<>(fileData, HttpStatus.OK);
     }
