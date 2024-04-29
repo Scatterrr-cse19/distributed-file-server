@@ -147,7 +147,6 @@ public class MetadataService {
         return nodes.get(0).getHomeUrl();
     }
 
-    // TODO: Implement get chunks method
     private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException, NoSuchAlgorithmException {
         log.info("Retrieving chunks of file {}", fileName);
         ArrayList<byte[]> chunks = new ArrayList<>();
