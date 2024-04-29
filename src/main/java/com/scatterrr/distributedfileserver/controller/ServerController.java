@@ -6,6 +6,7 @@ import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -41,10 +42,14 @@ public class ServerController {
     }
 
     @GetMapping(value = "/retrieve") // returns the merged file as a byte array
-    public byte[] retrieveFile(@RequestParam("fileName") String fileName) {
+    public ResponseEntity<byte []> retrieveFile(@RequestParam("fileName") String fileName) {
         // returns the merged file as a byte array
         // returns null if the file is not authentic
-        return metadataService.retrieveFile(fileName);
+        byte[] fileData = metadataService.retrieveFile(fileName);
+        if (fileData == null) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else
+            return new ResponseEntity<>(fileData, HttpStatus.OK);
     }
 
     // Not sure if this is needed

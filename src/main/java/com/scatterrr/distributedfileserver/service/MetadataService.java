@@ -61,7 +61,11 @@ public class MetadataService {
             String merkleRootHash = merkleTree.createMerkleTree(chunks);
             // check if merkleRootHash is equal to metadata.getMerkleRootHash(), hence the file is authentic
             boolean isAuthentic =  merkleRootHash.equals(metadata.getMerkleRootHash());
-            log.info("File is authentic: {}", isAuthentic);
+            if (!isAuthentic){
+                log.info("File is tampered");
+                throw new TamperedMetadataException("Chunks are tampered");
+            }
+            log.info("File is not tampered");
             return fileManager.mergeChunks(chunks);
         } catch (TamperedMetadataException e) {
             // Metadata in the nodes are tampered, hence the file is not authentic
