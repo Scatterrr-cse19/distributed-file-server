@@ -66,6 +66,7 @@ public class MetadataService {
         } catch (TamperedMetadataException e) {
             // Metadata in the nodes are tampered, hence the file is not authentic
             boolean isAuthentic = false;
+            log.error("File is authentic: {}", isAuthentic);
             return null;
         } catch (Exception e) {
             // Error in merging chunks
@@ -195,5 +196,5 @@ public class MetadataService {
         byte[] digest = md.digest();
         return Hex.encodeHexString(digest);
     }
-    
+
 }
