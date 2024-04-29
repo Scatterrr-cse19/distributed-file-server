@@ -4,6 +4,7 @@ import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.ChunksResponse;
 import com.scatterrr.distributedfileserver.dto.MetadataResponse;
 import com.scatterrr.distributedfileserver.dto.Node;
+import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -69,9 +70,13 @@ public class ServerController {
 
     // Not sure if this is needed
     @GetMapping(value = "/metadata")
-    public String getMetadata(@RequestParam("fileName") String fileName) {
-        // returns the metadata of the file as a JSONString (to be viewed at file explorer)
-        return metadataService.getMetadata(fileName).toJSONString();
+    public MetadataResponse getMetadata(@RequestParam("fileName") String fileName) {
+        Metadata metadata = metadataService.getMetadata(fileName);
+        return MetadataResponse.builder()
+                .fileName(metadata.getFileName())
+                .fileSize(metadata.getFileSize())
+                .fileType(metadata.getFileType())
+                .build();
     }
 
 }

@@ -21,14 +21,4 @@ public class Metadata {
     private String merkleRootHash;
     private long fileSize;
     private String fileType;
-
-
-    public String toJSONString() {
-        return "{"
-                + "\"fileName\":\"" + fileName + "\","
-                + "\"locationOfFirstChunk\":\"" + locationOfFirstChunk + "\","
-                + "\"numberOfChunks\":" + numberOfChunks + ","
-                + "\"merkleRootHash\":\"" + merkleRootHash + "\""
-                + "}";
-    }
 }

@@ -51,7 +51,7 @@ public class MetadataService {
     }
 
     public Metadata getMetadata(String fileName) {
-        return fileServerRepository.findById(fileName).orElse(null);
+        return fileServerRepository.findByFileName(fileName);
     }
 
     public ChunksResponse retrieveFile(String fileName, boolean allowTampered) {
