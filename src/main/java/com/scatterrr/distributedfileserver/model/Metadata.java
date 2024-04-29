@@ -19,5 +19,16 @@ public class Metadata {
     private String locationOfFirstChunk;
     private int numberOfChunks;
     private String merkleRootHash;
+
     // TODO: Add more metadata fields
+
+
+    public String toJSONString() {
+        return "{"
+                + "\"fileName\":\"" + fileName + "\","
+                + "\"locationOfFirstChunk\":\"" + locationOfFirstChunk + "\","
+                + "\"numberOfChunks\":" + numberOfChunks + ","
+                + "\"merkleRootHash\":\"" + merkleRootHash + "\""
+                + "}";
+    }
 }
