@@ -2,6 +2,7 @@ package com.scatterrr.distributedfileserver.service;
 
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
 import com.scatterrr.distributedfileserver.dto.Node;
+import com.scatterrr.distributedfileserver.dto.RetrieveResponse;
 import com.scatterrr.distributedfileserver.dto.UploadResponse;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.repository.FileServerRepository;
@@ -57,6 +58,7 @@ public class MetadataService {
             String merkleRootHash = merkleTree.createMerkleTree(chunks);
             // check if merkleRootHash is equal to metadata.getMerkleRootHash(), hence the file is authentic
             boolean isAuthentic =  merkleRootHash.equals(metadata.getMerkleRootHash());
+            log.info("File is authentic: {}", isAuthentic);
             return fileManager.mergeChunks(chunks);
         } catch (TamperedMetadataException e) {
             // Metadata in the nodes are tampered, hence the file is not authentic
@@ -94,9 +96,12 @@ public class MetadataService {
         while (i < chunks.size()) {
             String nextNode;
             if (j == nodes.size() - 1) {
-                nextNode = nodes.get(0).getName();
+                nextNode = nodes.get(0).getHomeUrl();
             } else {
-                nextNode = nodes.get(j).getName();
+                nextNode = nodes.get(j+1).getHomeUrl();
+            }
+            if (i == chunks.size() - 1) {
+                nextNode = "null";
             }
 
             body = new LinkedMultiValueMap<>();
@@ -136,27 +141,42 @@ public class MetadataService {
 
     // TODO: Implement get chunks method
     private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException {
+        log.info("Retrieving chunks of file {}", fileName);
         ArrayList<byte[]> chunks = new ArrayList<>();
         // Get chunks from nodes
-        String chunkId = "0";
+        int chunkId = 0;
         String prevHash = "0";
         String nodeUrl = firstChunkUrl;
 
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        while (nodeUrl != null) {
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("fileName", fileName);
+            body.add("chunkId", chunkId);
 
-        body.add("fileName", fileName);
-        body.add("chunkId", chunkId);
+            log.info("Retrieving chunk {} from node {}", chunkId, nodeUrl);
+            WebClient.ResponseSpec responseSpec = webClientBuilder.build().post()
+                    .uri(nodeUrl + "/api/node/retrieve")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve();
 
-        WebClient.ResponseSpec responseSpec = webClientBuilder.build().post()
-                .uri(nodeUrl + "/api/node/retrieve")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(BodyInserters.fromMultipartData(body))
-                .retrieve();
+            log.info("Received response {}", responseSpec.toString());
 
-        log.info("Received response {}", responseSpec.toString());
+            RetrieveResponse retrieveResponse = Objects.requireNonNull(
+                    responseSpec.bodyToMono(RetrieveResponse.class).block());
 
-        // compare metadata of the node (w.r.t. previous node) and throw exception if metadata is tampered
-        // throw new TamperedMetadataException("Metadata tampered on node"); if metadata of file on the node is tampered
+            if (retrieveResponse.getStatusCode() == HttpStatus.OK.value()) {
+                chunks.add(retrieveResponse.getChunk());
+                String retrievedPrevHash = retrieveResponse.getPrevHash();
+                // compare metadata of the node (w.r.t. previous node) and throw exception if metadata is tampered
+                // throw new TamperedMetadataException("Metadata tampered on node"); if metadata of file on the node is tampered
+                // TODO: Compare retrievedPrevHash with prevHash and throw exception if not equal
+
+                nodeUrl = retrieveResponse.getNextNode();
+                chunkId += 1;
+                log.info("Chunk {} retrieved, next node is {}. node hash is {}", chunkId, nodeUrl, retrievedPrevHash);
+            }
+        }
         return chunks;
     }
 
