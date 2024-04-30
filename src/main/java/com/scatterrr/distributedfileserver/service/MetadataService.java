@@ -36,6 +36,7 @@ public class MetadataService {
     private final WebClient.Builder webClientBuilder;
 
     public void saveMetadata(MultipartFile file) throws Exception{
+        //TODO:  chunk into multipart files -- use fileManager.chunkIntoMultipartFile
         ArrayList<byte[]> chunks = fileManager.chunkFile(file);
         String merkleRootHash = merkleTree.createMerkleTree(chunks);
         String firstChunkUrl = distributeChunks(chunks, file.getOriginalFilename(), merkleRootHash);
