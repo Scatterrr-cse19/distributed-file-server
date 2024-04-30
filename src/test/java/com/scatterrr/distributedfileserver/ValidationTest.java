@@ -22,13 +22,14 @@ import java.util.ArrayList;
 import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
 public class ValidationTest {
 
-    private static final ArrayList<byte[]> chunks = new ArrayList<>();
+    private static final ArrayList<MultipartFile> chunks = new ArrayList<>();
 
     private static final String fileName = "data";
     private String originalRoot;
@@ -44,7 +45,7 @@ public class ValidationTest {
         byte[] content = Files.readAllBytes(Paths.get(ROOT + fileName + ".txt"));
         MultipartFile inputFile = new MockMultipartFile(fileName + ".txt",
                 fileName + ".txt", "text/plain", content);
-        chunks.addAll(fileManager.chunkFile(inputFile));
+        chunks.addAll(fileManager.chunkIntoMultipartFiles(inputFile));
 
         String merkleRoot = merkleTree.createMerkleTree(chunks);
 
@@ -56,24 +57,23 @@ public class ValidationTest {
     }
 
     @Test
-    public void validChunksTest() throws Exception{
+    public void validChunksTest(){
         String merkleRoot = merkleTree.createMerkleTree(chunks);
         assertEquals(originalRoot, merkleRoot);
     }
 
     @Test
-    public void tamperedChunksTest() throws Exception{
-        ArrayList<byte[]> tamperedChunks = new ArrayList<>(chunks);
-        byte[] tamperedChunk = tamperedChunks.get(0);
-        tamperedChunk[tamperedChunk.length - 1] = (byte) (tamperedChunk[tamperedChunk.length - 1] + 1);
+    public void tamperedChunksTest(){
+        ArrayList<MultipartFile> tamperedChunks = new ArrayList<>(chunks);
+        tamperedChunks.set(0, tamperedChunks.get(1));
 
         String merkleRoot = merkleTree.createMerkleTree(tamperedChunks);
         assertNotEquals(originalRoot, merkleRoot);
     }
 
     @Test
-    public void missingChunksTest() throws Exception {
-        ArrayList<byte[]> tamperedChunks = new ArrayList<>(chunks);
+    public void missingChunksTest(){
+        ArrayList<MultipartFile> tamperedChunks = new ArrayList<>(chunks);
         tamperedChunks.remove(0);
 
         String merkleRoot = merkleTree.createMerkleTree(tamperedChunks);
@@ -81,9 +81,9 @@ public class ValidationTest {
     }
 
     @Test
-    public void extraChunksTest() throws Exception {
-        ArrayList<byte[]> tamperedChunks = new ArrayList<>(chunks);
-        tamperedChunks.add(new byte[0]);
+    public void extraChunksTest(){
+        ArrayList<MultipartFile> tamperedChunks = new ArrayList<>(chunks);
+        tamperedChunks.add(tamperedChunks.get(0));
 
         String merkleRoot = merkleTree.createMerkleTree(tamperedChunks);
         assertNotEquals(originalRoot, merkleRoot);

@@ -12,7 +12,6 @@ import java.io.*;
 import java.util.ArrayList;
 
 import static com.scatterrr.distributedfileserver.config.Config.CHUNK_SIZE;
-import static com.scatterrr.distributedfileserver.config.Config.ROOT;
 
 @Service
 @NoArgsConstructor
