@@ -36,8 +36,7 @@ public class MetadataService {
     private final WebClient.Builder webClientBuilder;
 
     public void saveMetadata(MultipartFile file) throws Exception{
-        //TODO:  chunk into multipart files -- use fileManager.chunkIntoMultipartFile
-        ArrayList<byte[]> chunks = fileManager.chunkFile(file);
+        ArrayList<MultipartFile> chunks = fileManager.chunkIntoMultipartFiles(file);
         String merkleRootHash = merkleTree.createMerkleTree(chunks);
         String firstChunkUrl = distributeChunks(chunks, file.getOriginalFilename(), merkleRootHash);
         Metadata metadata = Metadata.builder()
@@ -58,7 +57,7 @@ public class MetadataService {
     public ChunksResponse retrieveFile(String fileName, boolean allowTampered) {
         Metadata metadata = getMetadata(fileName);
         try {
-            ArrayList<byte[]> chunks = getChunks(metadata.getLocationOfFirstChunk(), fileName);
+            ArrayList<MultipartFile> chunks = getChunks(metadata.getLocationOfFirstChunk(), fileName);
             String merkleRootHash = merkleTree.createMerkleTree(chunks);
             // check if merkleRootHash is equal to metadata.getMerkleRootHash(), hence the file is authentic
             boolean isAuthentic =  merkleRootHash.equals(metadata.getMerkleRootHash());
@@ -83,7 +82,7 @@ public class MetadataService {
         }
     }
 
-    private String distributeChunks(ArrayList<byte[]> chunks, String fileName, String merkleRootHash){
+    private String distributeChunks(ArrayList<MultipartFile> chunks, String fileName, String merkleRootHash){
         log.info("Distributing chunks of file {} with merkleHash {}", fileName, merkleRootHash);
         ArrayList<Node> nodes = registry.getApplications().getRegisteredApplications().stream().
                 map(application ->
@@ -152,9 +151,9 @@ public class MetadataService {
         return nodes.get(0).getHomeUrl();
     }
 
-    private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException, NoSuchAlgorithmException {
+    private ArrayList<MultipartFile> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException, NoSuchAlgorithmException {
         log.info("Retrieving chunks of file {}", fileName);
-        ArrayList<byte[]> chunks = new ArrayList<>();
+        ArrayList<MultipartFile> chunks = new ArrayList<>();
         // Get chunks from nodes
         int chunkId = 0;
         String prevHash = "0";

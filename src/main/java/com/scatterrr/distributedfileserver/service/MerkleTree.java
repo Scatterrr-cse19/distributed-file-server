@@ -2,25 +2,28 @@ package com.scatterrr.distributedfileserver.service;
 
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import static com.scatterrr.distributedfileserver.config.Config.ROOT;
-
 @Service
 @NoArgsConstructor
 public class MerkleTree {
 
-    public String createMerkleTree(ArrayList<byte[]> chunkLists) {
+    public String createMerkleTree(ArrayList<MultipartFile> chunkLists) {
     ArrayList<String> txnLists = new ArrayList<>(chunkLists.stream()
-                    .map(chunk -> new String(chunk))
+                    .map(chunk -> {
+                        try {
+                            return new String(chunk.getBytes());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
                     .collect(Collectors.toList()));
         return merkleTree(txnLists).get(0);
     }

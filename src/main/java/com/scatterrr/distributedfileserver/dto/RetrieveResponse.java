@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @AllArgsConstructor
@@ -13,6 +14,6 @@ public class RetrieveResponse {
     private int statusCode;
     private String nextNode;
     private String prevHash;
-    private byte[] chunk;
+    private MultipartFile chunk;
     private String metadataRecord;
 }
