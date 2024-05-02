@@ -65,7 +65,7 @@ public class MetadataService {
                 throw new TamperedMetadataException("Chunks are tampered");
             }
             return ChunksResponse.builder()
-                    .chunks(fileManager.mergeChunks(chunks))
+                    .chunks(fileManager.mergeChunks(chunks,fileName))
                     .isAuthenticated(isAuthentic)
                     .build();
         } catch (TamperedMetadataException e) {
