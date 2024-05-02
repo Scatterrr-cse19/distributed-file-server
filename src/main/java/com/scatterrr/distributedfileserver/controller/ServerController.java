@@ -7,12 +7,16 @@ import com.scatterrr.distributedfileserver.dto.Node;
 import com.scatterrr.distributedfileserver.model.Metadata;
 import com.scatterrr.distributedfileserver.service.MetadataService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -49,23 +53,30 @@ public class ServerController {
         return metadataService.getFiles();
     }
 
-    @GetMapping(value = "/retrieve") // returns the merged file as a byte array
-    public ResponseEntity<byte[]> retrieveFile(@RequestParam("fileName") String fileName
-            , @RequestParam(
-            value = "allowTampered", required = false, defaultValue = "false") Boolean allowTampered) {
+    @GetMapping(value = "/retrieve")
+    public ResponseEntity<Resource> retrieveFile(@RequestParam("fileName") String fileName,
+                                                 @RequestParam(value = "allowTampered", required = false, defaultValue = "false") Boolean allowTampered) {
 
         // returns the merged file as a byte array
         // returns null if the file is not authentic
         ChunksResponse chunksResponse = metadataService.retrieveFile(fileName, allowTampered);
-        byte[] fileData = chunksResponse.getChunks();
+        File fileData = chunksResponse.getChunks();
         boolean isAuthenticated = chunksResponse.isAuthenticated();
+
         if (!isAuthenticated) {
             if (fileData == null)
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             else
-                return new ResponseEntity<>(fileData, HttpStatus.OK);
-        } else
-            return new ResponseEntity<>(fileData, HttpStatus.OK);
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                        .contentType(MediaType.parseMediaType(MediaType.APPLICATION_PDF_VALUE))
+                        .body(new FileSystemResource(fileData));
+        } else {
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.parseMediaType(MediaType.APPLICATION_PDF_VALUE))
+                    .body(new FileSystemResource(fileData));
+        }
     }
 
     // Not sure if this is needed

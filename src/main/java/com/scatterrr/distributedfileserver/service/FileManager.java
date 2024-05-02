@@ -35,10 +35,7 @@ public class FileManager {
         return fileChunks;
     }
 
-    public byte[] mergeChunks(ArrayList<byte[]> fileChunks, String fileName) throws IOException {
-        System.out.println("mw call wenne nedda bn");
-//        File mergedFile = new File(MERGED_FILE_PATH+fileName);
-
+    public File mergeChunks(ArrayList<byte[]> fileChunks, String fileName) throws IOException {
         // Create FileOutputStream to write the merged content into the new file
         try (FileOutputStream fos = new FileOutputStream(MERGED_FILE_PATH+fileName)) {
             // Iterate through each byte[] item in the ArrayList
@@ -51,8 +48,7 @@ public class FileManager {
             e.printStackTrace();
             throw e;
         }
-        byte[] outputFile =  Files.readAllBytes(Paths.get(MERGED_FILE_PATH+fileName));
-//        mergedFile.delete();
-        return outputFile;
+        return new File(MERGED_FILE_PATH+fileName);
+
     }
 }
