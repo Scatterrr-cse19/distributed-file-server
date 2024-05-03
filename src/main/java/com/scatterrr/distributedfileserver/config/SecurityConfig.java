@@ -14,7 +14,7 @@ public class SecurityConfig {
             public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
                 registry.addMapping("/api/server/**")
                         .allowedOrigins("http://localhost:3000")
-                        .allowedMethods("GET", "POST")
+                        .allowedMethods("GET", "POST", "DELETE")
                         .allowCredentials(false);
             }
         };
