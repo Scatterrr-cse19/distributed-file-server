@@ -15,4 +15,5 @@ public class RetrieveResponse {
     private String prevHash;
     private byte[] chunk;
     private String metadataRecord;
+    private String merkleRootHash;
 }

@@ -57,7 +57,7 @@ public class MetadataService {
     public ChunksResponse retrieveFile(String fileName, boolean allowTampered) {
         Metadata metadata = getMetadata(fileName);
         try {
-            ArrayList<byte[]> chunks = getChunks(metadata.getLocationOfFirstChunk(), fileName);
+            ArrayList<byte[]> chunks = getChunks(metadata.getLocationOfFirstChunk(), fileName, metadata.getMerkleRootHash());
             String merkleRootHash = merkleTree.createMerkleTree(chunks);
             // check if merkleRootHash is equal to metadata.getMerkleRootHash(), hence the file is authentic
             boolean isAuthentic =  merkleRootHash.equals(metadata.getMerkleRootHash());
@@ -151,13 +151,14 @@ public class MetadataService {
         return nodes.get(0).getHomeUrl();
     }
 
-    private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName) throws TamperedMetadataException, NoSuchAlgorithmException {
+    private ArrayList<byte[]> getChunks(String firstChunkUrl, String fileName, String merkleRootHash) throws TamperedMetadataException, NoSuchAlgorithmException {
         log.info("Retrieving chunks of file {}", fileName);
         ArrayList<byte[]> chunks = new ArrayList<>();
         // Get chunks from nodes
         int chunkId = 0;
         String prevHash = "0";
         String nodeUrl = firstChunkUrl;
+        ArrayList<String> merkleTreeHashes = new ArrayList<>();
 
         while (!nodeUrl.equals("null")) {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -183,8 +184,11 @@ public class MetadataService {
                 // throw new TamperedMetadataException("Metadata tampered on node"); if metadata of file on the node is tampered
                 String metadataRecord = retrieveResponse.getMetadataRecord();
                 String metadataRecordHash = sha256(metadataRecord);
-                if (prevHash.equals(retrievedPrevHash))
+                if (prevHash.equals(retrievedPrevHash)) {
                     prevHash = metadataRecordHash;
+                    // Collect merkle tree hashes to verify the merkle root hash using majority voting
+                    merkleTreeHashes.add(retrieveResponse.getMerkleRootHash());
+                }
                 else
                     throw new TamperedMetadataException("Metadata tampered on node");
 
@@ -192,6 +196,14 @@ public class MetadataService {
                 chunkId += 1;
                 log.info("Chunk {} retrieved, next node is {}. node hash is {}", chunkId, nodeUrl, retrievedPrevHash);
             }
+        }
+        // Verify merkle root hash using majority voting
+        // Get the most frequent merkle root hash
+        String RetrievedMerkleRootHash = merkleTreeHashes.stream()
+                .max((a, b) -> Collections.frequency(merkleTreeHashes, a) - Collections.frequency(merkleTreeHashes, b))
+                .orElse(null);
+        if (RetrievedMerkleRootHash == null || !RetrievedMerkleRootHash.equals(merkleRootHash)) {
+            throw new TamperedMetadataException("Merkle root hash is tampered");
         }
         return chunks;
     }
