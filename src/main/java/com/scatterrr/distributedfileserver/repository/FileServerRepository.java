@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface FileServerRepository extends JpaRepository<Metadata, String> {
 
     Metadata findByFileName(String fileName);
+
+    void deleteByFileName(String fileName);
 }

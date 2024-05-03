@@ -10,6 +10,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
@@ -230,5 +231,27 @@ public class MetadataService {
                                 .build()
                 )
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Transactional
+    public void deleteChunks(String fileName) {
+        ArrayList<Node> nodes = registry.getApplications().getRegisteredApplications().stream().
+                map(application ->
+                        application.getInstances().stream().map(instance ->
+                                new Node(
+                                        application.getName(),
+                                        instance.getHomePageUrl()
+                                )
+                        ).collect(Collectors.toCollection(ArrayList::new))
+                ).collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
+        // Go through each node and call delete endpoint
+        nodes.forEach(node -> {
+            webClientBuilder.build().delete()
+                    .uri(node.getHomeUrl() + "api/node/delete?fileName=" + fileName)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        });
+        fileServerRepository.deleteByFileName(fileName);
     }
 }

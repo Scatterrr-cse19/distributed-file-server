@@ -49,7 +49,12 @@ public class ServerController {
         return metadataService.getFiles();
     }
 
-    @GetMapping(value = "/retrieve") // returns the merged file as a byte array
+    @DeleteMapping("/delete")
+    public void deleteChunks(@RequestParam("fileName") String fileName) {
+        metadataService.deleteChunks(fileName);
+    }
+
+        @GetMapping(value = "/retrieve") // returns the merged file as a byte array
     public ResponseEntity<byte[]> retrieveFile(@RequestParam("fileName") String fileName
             , @RequestParam(
             value = "allowTampered", required = false, defaultValue = "false") Boolean allowTampered) {
