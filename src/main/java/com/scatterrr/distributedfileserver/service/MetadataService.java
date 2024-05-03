@@ -77,8 +77,12 @@ public class MetadataService {
                     .isAuthenticated(isAuthentic)
                     .build();
         } catch (Exception e) {
-            // Error in merging chunks
-            return null;
+            boolean isAuthentic = false;
+            log.error("File is authentic: {}", isAuthentic);
+            return ChunksResponse.builder()
+                    .chunks(null)
+                    .isAuthenticated(isAuthentic)
+                    .build();
         }
     }
 
